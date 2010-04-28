@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * This keeps track of Connection State.
  *
  * @author troy
- * @version $Id: State.java,v 1.1 2010/04/28 03:12:47 troy Exp $
+ * @version $Id: State.java,v 1.2 2010/04/28 03:19:30 troy Exp $
  */
 public class State {
    InetAddress server;
@@ -102,6 +102,10 @@ public class State {
 
    public String getIrcHost() {
       return ircHost;
+   }
+
+   public String getIrcId() {
+      return ircId;
    }
 
    public void addListener(IrcEventListener i) {
