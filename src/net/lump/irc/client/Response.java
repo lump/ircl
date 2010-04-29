@@ -3,13 +3,13 @@ package net.lump.irc.client;
 import java.util.HashMap;
 
 import static net.lump.irc.client.Response.Type.*;
-import static net.lump.irc.client.Response.Type.Bogus;
+import static net.lump.irc.client.Response.Type.Error;
 
 /**
  * Server Response Codes.
  *
  * @author troy
- * @version $Id: Response.java,v 1.1 2010/04/28 03:12:47 troy Exp $
+ * @version $Id: Response.java,v 1.2 2010/04/29 03:06:09 troy Exp $
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public enum Response {

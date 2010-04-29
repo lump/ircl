@@ -7,7 +7,7 @@ import java.util.HashMap;
  * User.
  *
  * @author troy
- * @version $Id: User.java,v 1.1 2010/04/28 03:12:47 troy Exp $
+ * @version $Id: User.java,v 1.2 2010/04/29 03:06:09 troy Exp $
  */
 public class User extends Command {
    String user;
@@ -58,24 +58,23 @@ public class User extends Command {
       }
 
       public static String toString(Mode... modes) {
-         return addString();
+         String out = "";
+         for (Mode m : modes) out += m.modeChar;
+         return out;
       }
 
       public static Mode modeOf(char c) {
          // bootstrap revmap because enums we can't refer to static hashmaps in their constructors
-         if (!revMap.containsKey(c))
-            for (Mode m : Mode.values())
-               if (!revMap.containsKey(m.modeChar)) revMap.put(m.modeChar, m);
+         if (revMap.isEmpty()) for (Mode m : Mode.values()) revMap.put(m.modeChar, m);
          return revMap.get(c);
       }
 
-      public Mode[] parseString(String modes) {
+      public static Mode[] parseString(String modes) {
          ArrayList<Mode> out = new ArrayList<Mode>();
-         if (modes.startsWith("+"))  {
-            for (int x=1; x<modes.length(); x++) {
-               Mode m = modeOf(modes.charAt(x));
-               if (m != null) out.add(m);
-            }
+         if (modes.startsWith("+") || modes.startsWith("-")) modes = modes.substring(1);
+         for (int x=0; x<modes.length(); x++) {
+            Mode m = modeOf(modes.charAt(x));
+            if (m != null) out.add(m);
          }
          return out.toArray(new Mode[out.size()]);
       }
@@ -86,6 +85,30 @@ public class User extends Command {
       this.user = user;
       this.realName = realName;
       this.modes = modes;
+   }
+
+   public User(String realName, Mode... modes) {
+      super();
+      this.user = System.getProperty("user.name");
+      this.realName = realName;
+      this.modes = modes;
+   }
+
+   public User setModes(Mode... modes) {
+      this.modes = modes;
+      return this;
+   }
+
+   public String getUser() {
+      return user;
+   }
+
+   public Mode[] getModes() {
+      return modes;
+   }
+
+   public String getRealName() {
+      return realName;
    }
 
    @Override

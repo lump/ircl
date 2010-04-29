@@ -5,10 +5,10 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * .
+ * Command skeleton.
  *
  * @author troy
- * @version $Id: Command.java,v 1.1 2010/04/28 03:12:47 troy Exp $
+ * @version $Id: Command.java,v 1.2 2010/04/29 03:06:09 troy Exp $
  */
 public abstract class Command {
    CommandName commandName;
@@ -54,9 +54,9 @@ public abstract class Command {
       while (it.hasNext())
       {
          final Object nextVal = it.next();
+         sb.append(delimiter);
          if (nextVal != null)
          {
-            sb.append(delimiter);
             sb.append(nextVal.toString());
          }
       }
