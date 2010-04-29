@@ -2,19 +2,21 @@ import net.lump.irc.client.*;
 import net.lump.irc.client.commands.*;
 import net.lump.irc.client.listeners.AbstractIrcEventListener;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.HashMap;
 
 /**
  * .
  *
  * @author troy
- * @version $Id: TestConnect.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: TestConnect.java,v 1.3 2010/04/29 03:47:26 troy Exp $
  */
 public class TestConnect {
+
+   private static final Logger logger = Logger.getLogger(TestConnect.class);
 
    static {
       BasicConfigurator.configure();
@@ -23,15 +25,18 @@ public class TestConnect {
    @Test
    public void testConnect() throws Exception {
 
-      final HashMap<Response, Boolean> checkFlags = new HashMap<Response, Boolean>();
+      final HashMap<Object, Boolean> checkFlags = new HashMap<Object, Boolean>();
       checkFlags.put(Response.RPL_WELCOME, false);
       checkFlags.put(Response.RPL_YOURHOST, false);
-      checkFlags.put(Response.RPL_MOTD, false);
       checkFlags.put(Response.RPL_ENDOFMOTD, false);
+      checkFlags.put(CommandName.MODE, false);
+      checkFlags.put(CommandName.JOIN, false);
+      checkFlags.put(CommandName.PART, false);
+      checkFlags.put("Disconnected", false);
       final TestConnect thisObject = this;
 
       User user = new User("Testing 1 2 3", User.Mode.invisible, User.Mode.wallops);
-      Nick nick = new Nick("abcdefghijklm");
+      Nick nick = new Nick("testing");
       Oper oper = new Oper("soar","billy.go");
       final State state = new State("gargamel.sosstaffing.com", user, nick, oper);
       final Connection c = Connection.getConnection(state);
@@ -39,7 +44,28 @@ public class TestConnect {
       state.addListener(new AbstractIrcEventListener() {
          @Override
          public void handleResponse(Prefix prefix, Response r, String[] args, String message) {
-            checkFlags.put(r, true);
+            if (checkFlags.containsKey(r)) {
+               logger.info("got " + r);
+               checkFlags.put(r, true);
+            }
+            if (done(checkFlags)) synchronized(thisObject) { thisObject.notify(); }
+         }
+
+         @Override
+         public void handleCommand(Prefix prefix, CommandName c, String[] args, String message) {
+            if (prefix.getNick() != null && prefix.getNick().equals(state.getNick().name())
+                || prefix.getHost() != null && prefix.getHost().equals(state.getNick().name()))
+               switch (c) {
+                  case JOIN:
+                     logger.info("got " + c);
+                     checkFlags.put(c, true); break;
+                  case MODE:
+                     logger.info("got " + c);
+                     checkFlags.put(c, true); break;
+                  case PART:
+                     logger.info("got " + c);
+                     checkFlags.put(c, true); break;
+               }
             if (done(checkFlags)) synchronized(thisObject) { thisObject.notify(); }
          }
 
@@ -50,16 +76,10 @@ public class TestConnect {
             if (c != null) c.send(state.getNick());
          }
 
-         public void handleDisconnected(InetAddress address) {
-            try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
-            try {
-               c.connect();
-            } catch (IOException e) {
-               System.err.println("Can't connect to " + address);
-               System.exit(1);
-            }
+         public void handleDisconnected(String[] args, String message) {
+            logger.info(message);
+            checkFlags.put("Disconnected", true);
          }
-
       });
 
       try {
@@ -69,6 +89,8 @@ public class TestConnect {
 
          c.send(new Join(channel));
          c.send(new Privmsg(channel.getName(), "Hello World"));
+         c.send(new Part(channel));
+         c.send(new Quit("I'm outta here"));
       }
       catch (IOException ioe)
       {
@@ -81,12 +103,11 @@ public class TestConnect {
          synchronized (this) { wait(1000); }
 
       assert done(checkFlags) : "didn't get all expected messages";
-      c.send(new Quit("I'm outta here"));
    }
 
-   private boolean done(HashMap<Response, Boolean> checkFlags) {
+   private boolean done(HashMap<Object, Boolean> checkFlags) {
       boolean done = true;
-      for (Response i : checkFlags.keySet()) {
+      for (Object i : checkFlags.keySet()) {
          if (checkFlags.get(i).equals(Boolean.FALSE)) {
             done = false;
             break;

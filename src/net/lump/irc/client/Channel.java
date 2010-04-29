@@ -6,7 +6,6 @@ import net.lump.irc.client.listeners.ChannelListener;
 import net.lump.irc.client.listeners.IrcEventListener;
 import org.apache.log4j.Logger;
 
-import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * .
  *
  * @author troy
- * @version $Id: Channel.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Channel.java,v 1.3 2010/04/29 03:47:26 troy Exp $
  */
 public class Channel {
 
@@ -147,12 +146,13 @@ public class Channel {
       }
 
       public void handleNickNameInUse(String[] args, String message) {
-        // not to be used here
+         // not to be used here
       }
 
-      public void handleDisconnected(InetAddress address) {
-         // not used here
+      public void handleDisconnected(String[] args, String message) {
+         // not to be used here
       }
+
    };
 
    private static final ConcurrentHashMap<ChannelListener, Object> listeners

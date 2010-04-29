@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * This keeps track of Connection State.
  *
  * @author troy
- * @version $Id: State.java,v 1.3 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: State.java,v 1.4 2010/04/29 03:47:26 troy Exp $
  */
 public class State {
    private InetAddress server;
@@ -42,8 +42,6 @@ public class State {
 
    IrcEventListener changeListener = new IrcEventListener(){
       public void handleResponse(Prefix prefix, Response r, String[] args, String message) {
-         logger.debug(String.format(
-             "%s %s %s %s %s", server, prefix, r.name(), (Arrays.asList(args)).toString(), message));
 
          switch(r) {
             case RPL_WELCOME:
@@ -65,6 +63,9 @@ public class State {
                for (IrcEventListener l : getListeners())
                   l.handleNickNameInUse(args, message);
                break;
+            default:
+               logger.debug(String.format(
+                   "%s %s %s %s %s", server, prefix, r.name(), (Arrays.asList(args)).toString(), message));
          }
       }
 
@@ -76,16 +77,23 @@ public class State {
             case PART:
                if (prefix.getNick().equals(nick) && args[0] != null) removeChannel(args[0]);
                break;
+            case ERROR:
+               if (message != null && message.matches("^[Cc]losing [Ll]ink.*$")) {
+                  logger.warn(message);
+                  for (IrcEventListener l : getListeners()) l.handleDisconnected(args, message);
+               }
+               break;
+            default:
+               logger.debug(String.format(
+                   "%s %s %s %s %s", server, prefix, c.name(), (Arrays.asList(args)).toString(), message));
          }
-         logger.debug(String.format(
-             "%s %s %s %s %s", server, prefix, c.name(), (Arrays.asList(args)).toString(), message));
       }
 
       public void handleNickNameInUse(String[] args, String message) {
          // we don't handle this here
       }
 
-      public void handleDisconnected(InetAddress address) {
+      public void handleDisconnected(String[] args, String message) {
          // we don't handle this here
       }
    };

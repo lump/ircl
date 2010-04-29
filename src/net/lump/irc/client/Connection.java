@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * The socket that is used to talk to the server.
  *
  * @author troy
- * @version $Id: Connection.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Connection.java,v 1.3 2010/04/29 03:47:26 troy Exp $
  */
 public class Connection {
 
@@ -93,7 +93,7 @@ public class Connection {
                if (writerThread != null && (!writerThread.isInterrupted() || writerThread.isAlive()))
                   writerThread.interrupt();
                for (IrcEventListener l : state.getListeners())
-                  l.handleDisconnected(socketInetAddress);
+                  l.handleDisconnected(new String[]{""},"Reader Thread Closed");
             }
          }
       }, "IRC Reader");
