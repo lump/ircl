@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="irc" default="jar">
+
+    <!-- Compiler options -->
+
+    <property name="compiler.debug" value="on"/>
+    <property name="compiler.generate.no.warnings" value="off"/>
+    <property name="compiler.args" value=""/>
+    <property name="compiler.max.memory" value="128m"/>
+
+    <!-- Project Libraries -->
+
+    <fileset id="lib.dir" dir="lib" includes="*.jar"/>
+
+    <dirname property="module.irc.basedir" file="${ant.file}"/>
+    <property name="irc.output.dir" value="${module.irc.basedir}/classes"/>
+    <property name="irc.testoutput.dir" value="${module.irc.basedir}/classes"/>
+    <property name="compiler.args.irc" value="${compiler.args}"/>
+
+    <path id="irc.module.classpath">
+        <fileset refid="lib.dir"/>
+    </path>
+
+    <path id="irc.runtime.module.classpath">
+        <pathelement location="${irc.output.dir}"/>
+        <pathelement location="${irc.testoutput.dir}"/>
+        <fileset refid="lib.dir"/>
+    </path>
+
+    <path id="irc.module.sourcepath">
+        <dirset dir="${module.irc.basedir}">
+            <include name="src"/>
+        </dirset>
+    </path>
+
+    <path id="irc.module.testpath">
+        <dirset dir="${module.irc.basedir}">
+            <include name="src"/>
+        </dirset>
+    </path>
+
+
+    <target name="compile" depends="compile.src,compile.tests" description="compile source and tests"/>
+
+    <target name="compile.src" description="compile sources">
+        <mkdir dir="${irc.output.dir}"/>
+        <javac destdir="${irc.output.dir}"
+               debug="${compiler.debug}"
+               nowarn="${compiler.generate.no.warnings}"
+               memorymaximumsize="${compiler.max.memory}"
+               source="1.6"
+               target="1.6"
+               fork="true">
+            <compilerarg line="${compiler.args.irc}"/>
+            <classpath refid="irc.module.classpath"/>
+            <src refid="irc.module.sourcepath"/>
+        </javac>
+    </target>
+
+    <target name="jar" depends="clean,compile.src" description="build distribution jar">
+        <tstamp>
+            <format property="timestamp" pattern="EEE, d MMM yyyy HH:mm:ss Z (z)"/>
+        </tstamp>
+
+        <jar jarfile="irc-appender.jar" compress="true">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Build-Time" value="${timestamp}"/>
+                <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+                <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
+                <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
+            </manifest>
+            <fileset dir="${irc.output.dir}"/>
+        </jar>
+    </target>
+
+    <target name="compile.tests" depends="compile.src" description="compile tests"
+            unless="skip.tests">
+        <mkdir dir="${irc.output.dir}"/>
+        <javac destdir="${irc.testoutput.dir}"
+               debug="${compiler.debug}"
+               nowarn="${compiler.generate.no.warnings}"
+               memorymaximumsize="${compiler.max.memory}"
+               source="1.6"
+               target="1.6"
+               fork="true">
+            <compilerarg line="${compiler.args.irc}"/>
+            <classpath refid="irc.module.classpath"/>
+            <src refid="irc.module.testpath"/>
+        </javac>
+    </target>
+
+    <target name="clean" description="clean everything">
+        <delete dir="${irc.output.dir}"/>
+        <delete dir="${irc.testoutput.dir}"/>
+    </target>
+
+</project>
