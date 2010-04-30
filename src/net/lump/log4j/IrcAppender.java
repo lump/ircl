@@ -19,13 +19,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Copyright SOS Staffing 2010
-
 /**
- * .
+ * This provides a log4j IRC appender.
  *
  * @author troy
- * @version $Id: IrcAppender.java,v 1.2 2010/04/30 22:27:04 troy Exp $
+ * @version $Id: IrcAppender.java,v 1.3 2010/04/30 22:28:58 troy Exp $
  */
 public class IrcAppender extends AppenderSkeleton {
 

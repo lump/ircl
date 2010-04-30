@@ -1,12 +1,10 @@
 package net.lump.irc.client.commands;
 
-// Copyright SOS Staffing 2010
-
 /**
  * Away.
  *
  * @author troy
- * @version $Id: Away.java,v 1.1 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: Away.java,v 1.2 2010/04/30 22:28:58 troy Exp $
  */
 public class Away extends Command {
 
