@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * .
  *
  * @author troy
- * @version $Id: Channel.java,v 1.4 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: Channel.java,v 1.5 2010/04/30 22:27:04 troy Exp $
  */
 public class Channel {
 
@@ -83,6 +83,7 @@ public class Channel {
             case RPL_NAMREPLY:
                if (args[2] != null && args[2].equals(getName())) {
                   String[] nicks = message.split("\\s+");
+                  getNicks().clear();
                   getNicks().addAll(Arrays.asList(nicks));
                   for (ChannelListener l : getListeners()) l.onNames(nicks);
                }
@@ -99,7 +100,6 @@ public class Channel {
                   for (ChannelListener l : getListeners()) l.onMode(modes, new String[]{});
                }
                break;
-
          }
       }
 
@@ -162,7 +162,6 @@ public class Channel {
       addListener(new ChannelListener(){
 
          public void onNames(String[] names) {
-            nicks.addAll(Arrays.asList(names));
             logger.debug(String.format("%s names: %s", name, Arrays.asList(names).toString()));
          }
 
@@ -251,5 +250,13 @@ public class Channel {
 
    public String toString() {
       return name;
+   }
+
+   public boolean isJoined() {
+      return joined;
+   }
+
+   public void setJoined(boolean joined) {
+      this.joined = joined;
    }
 }

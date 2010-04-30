@@ -9,7 +9,7 @@ import static net.lump.irc.client.Response.Type.Error;
  * Server Response Codes.
  *
  * @author troy
- * @version $Id: Response.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Response.java,v 1.3 2010/04/30 22:27:04 troy Exp $
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public enum Response {

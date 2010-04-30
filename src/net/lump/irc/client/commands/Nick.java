@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * A Nick.
  *
  * @author troy
- * @version $Id: Nick.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Nick.java,v 1.3 2010/04/30 22:27:04 troy Exp $
  */
 public class Nick extends Command {
    private String nick;

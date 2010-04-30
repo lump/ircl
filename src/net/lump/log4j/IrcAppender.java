@@ -1,16 +1,22 @@
 package net.lump.log4j;
 
+import net.lump.irc.client.Channel;
 import net.lump.irc.client.IrcClient;
-import net.lump.irc.client.IrcSocket;
-import net.lump.irc.client.commands.Away;
-import net.lump.irc.client.commands.Nick;
-import net.lump.irc.client.commands.Pass;
-import net.lump.irc.client.commands.Privmsg;
+import net.lump.irc.client.Prefix;
+import net.lump.irc.client.Response;
+import net.lump.irc.client.commands.*;
+import net.lump.irc.client.exception.IllegalChannelException;
 import net.lump.irc.client.exception.IllegalNickException;
+import net.lump.irc.client.listeners.AbstractIrcEventListener;
+import net.lump.irc.client.listeners.IrcEventListener;
 import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.spi.LoggingEvent;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // Copyright SOS Staffing 2010
@@ -19,14 +25,15 @@ import java.util.regex.Pattern;
  * .
  *
  * @author troy
- * @version $Id: IrcAppender.java,v 1.1 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: IrcAppender.java,v 1.2 2010/04/30 22:27:04 troy Exp $
  */
 public class IrcAppender extends AppenderSkeleton {
 
-   private final IrcClient state = new IrcClient();
-   private IrcSocket ircSocket;
+   private static final ConcurrentHashMap<String, IrcClient> clients = new ConcurrentHashMap<String, IrcClient>();
 
-   private int port;
+   private IrcClient client;
+
+   private Integer port;
    private String host;
    private Pass pass;
    private Nick nick;
@@ -35,7 +42,7 @@ public class IrcAppender extends AppenderSkeleton {
    private String realName;
    private String operUser;
    private String operPass;
-   private String channel;
+   private Channel channel;
 
    public void setHost(String host) {
       this.host = host;
@@ -53,7 +60,7 @@ public class IrcAppender extends AppenderSkeleton {
       try {
          this.nick = new Nick(nick);
       } catch (IllegalNickException e) {
-         LogLog.error("Nick \"" + nick + "\" does not follow IRC nick rules");
+         LogLog.error("Nick \"" + nick + "\" does not follow IRC nick format");
       }
    }
 
@@ -74,82 +81,130 @@ public class IrcAppender extends AppenderSkeleton {
    }
 
    public void setChannel(String channel) {
-      this.channel = channel;
+      try {
+         this.channel = new Channel(channel);
+      } catch (IllegalChannelException e) {
+         LogLog.error("Nick \"" + nick + "\" does not follow IRC channel format");
+      }
    }
 
-   /** Derived appenders should override this method if option structure requires it.  */
+   IrcEventListener listener = new AbstractIrcEventListener() {
+         @Override
+         public void handleResponse(Prefix prefix, Response r, String[] args, String message) {
+         }
+
+         @Override
+         public void handleCommand(Prefix prefix, CommandName c, String[] args, String message) {
+            switch (c) {
+               case PRIVMSG:
+                  Matcher m = Pattern.compile("^\\s*"+ client.getNick()+",\\s*(.+)$",Pattern.CASE_INSENSITIVE).matcher(message);
+                  if (m.matches() && m.group(1) != null) {
+                     Matcher ct = Pattern.compile("^(greetings|hi|hello|welcome).*$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
+                     if (ct.matches() && ct.group(1) != null) {
+                        client.send(new Privmsg(channel.getName(),
+                            String.format("And %s to you, too, %s.", ct.group(1).toLowerCase(), prefix.getNick())));
+                     }
+                  }
+                  Matcher mt = Pattern.compile("^threshold\\s+(.+?)$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
+                  if (mt.matches() && mt.group(1) != null) {
+                     if (mt.group(1).equals("?")) {
+                        client.send(new Privmsg(channel.getName(), String.format(
+                            "My log4j appender threshold is %s, %s.", getThreshold().toString(), prefix.getNick())));
+                     }
+                     else {
+                        Level level = Level.toLevel(mt.group(1));
+                        setThreshold(level);
+                        client.send(new Privmsg(channel.getName(), String.format(
+                            "Ok, I set my log4j appender threshold to %s, %s.", level.toString(), prefix.getNick())));
+                     }
+                  }
+
+                  break;
+               case JOIN:
+                  if (prefix.getNick().equals(client.getNick().name()) && message.equals(channel.getName()))
+                     client.send(new Privmsg(channel.getName(), String.format(
+                         "Hello, I'm Log4j appender \"%s\" and my threshold is %s", name, getThreshold())));
+                  else if (prefix.getNick().matches("^[Tt]roy|[Ff]roy|[Ll]ump|[Bb]owmant") && message.equals(channel.getName())) {
+                     client.send(new Privmsg(channel.getName(), String.format(
+                         "Hello, Troy.  Welcome to " + channel.getName())));
+                  }
+                  break;
+            }
+         }
+
+         public void handleNickNameInUse(String[] args, String message) {
+            if (args[1].equals(client.getNick().name())) {
+               client.setNick(client.getNick().increment());
+            }
+            client.send(client.getNick());
+         }
+
+         public void handleDisconnected(String[] args, String message) {
+            LogLog.error("Disconnected");
+            try { Thread.sleep(1000); } catch (InterruptedException ignore) { }
+            activateOptions();
+         }
+      };
+
    @Override
    public void activateOptions() {
-/*
-      if (state.isAway())
 
-      boolean connectionChanged = false;
-
-
-      InetSocketAddress newServer = new InetSocketAddress(host, port);
-
-      Oper newOper = null;
-      if (operUser != null && operPass != null) newOper = new Oper(operUser, operPass);
-
-      if (!state.toString().equals(state.toString(nick, newServer))) connectionChanged = true;
-
-
-
-      if (!connectionChanged && connection.isConnected() && state.isRegistered()) {
-         if (state.getOper())
-      }
-
-
-      if (host.equals(state.getServer().getHostName()))
-
-         state.setServer(new InetSocketAddress(host, port));
-
-      try {
-         state.setNick(new Nick(nick));
-      } catch (IllegalNickException e) {
+      if (nick == null) {
+         LogLog.error(IrcAppender.class.getSimpleName() + " requires a nick parameter.");
          return;
-         LogLog.error("Nick \"" + nick + "\" does not follow IRC nick rules");
       }
 
-      if (connection == null || !connection.isConnected()) {
-         if (connection == null) try {
-            connection = Connection.getConnection(state);
-         } catch (IOException e) {
-            LogLog.error("Couldn't connect to " + state.getServer() + ":" + state.getPort());
+      if (host == null) {
+         LogLog.error(IrcAppender.class.getSimpleName() + " requires a host parameter.");
+         return;
+      }
+
+      User user = new User(userName, realName);
+      Oper oper = (operUser != null && operPass != null) ? new Oper(operUser, operPass) : null;
+
+      if (client == null) {
+         InetSocketAddress address = new InetSocketAddress(host, port == null ? IrcClient.DEFAULT_PORT : port);
+
+         String key = IrcClient.toString(nick, address);
+         if (clients.containsKey(key))
+            client = clients.get(key);
+         else {
+            client = new IrcClient(address, pass, user, nick, oper);
+            clients.put(client.toString(), client);
          }
+         client.addListener(listener);
+      }
+      else {
+         client.setNick(nick);
+         client.setUser(user);
+         client.setOper((operUser != null && operPass != null) ? new Oper(operUser, operPass) : null);
       }
 
-      if (state.isRegistered()) {
-      }
-
-
-      state.setUser(new User(userName, realName));
-      if (operUser != null && operPass != null) state.setOper(new Oper(operUser, operPass));
-*/
-
+      if (!client.isRegistered()) client.connect();
    }
 
    Pattern emptyWhiteSpace = Pattern.compile("^\\s*$");
 
    @Override
    public void append(LoggingEvent event) {
-      if (state.isRegistered()
-          && state.getChannel(channel) != null
-          && state.getChannel(channel).getNicks().size() > 1
-          && ircSocket != null
-          && ircSocket.isConnected()) {
 
-         if (state.isAway()) ircSocket.queueCommand(new Away(null));
+      if (client == null || !client.isRegistered()) activateOptions();
+      if (client.getChannel(channel.getName()) == null) client.send(new Join(channel));
+      if (client.isAway()) client.send(new Away(null));
+
+      // only log if there are others in there listening
+      // if the channel hasn't been joined, we don't know how many are in there yet, so queue it anyway.
+      if (channel.getNicks().size() > 1 || !channel.isJoined()) {
 
          //each line in an event needs to be sent as a separate msg
          //delimit on newlines, carriage returns and line feeds
          for (String line : layout.format(event).split("\\r\\n|\\r|\\n|\\f"))
             if (!emptyWhiteSpace.matcher(line).matches())
-               ircSocket.queueCommand(new Privmsg(channel, line.replaceAll("\\s*$", "")));
+               client.send(new Privmsg(channel.getName(), line.replaceAll("\\s*$", "")));
 
          if (event.getThrowableStrRep() != null && layout.ignoresThrowable())
             for (String t : event.getThrowableStrRep())
-               ircSocket.queueCommand(new Privmsg(channel, t.replaceAll("\\s*$", "")));
+               client.send(new Privmsg(channel.getName(), t.replaceAll("\\s*$", "")));
       }
    }
 
@@ -160,7 +215,7 @@ public class IrcAppender extends AppenderSkeleton {
 
    @Override
    public void close() {
-      ircSocket.queueCommand(new Privmsg(channel, "I'm going away for a bit."));
-      ircSocket.queueCommand(new Away("I'm not listening to you right now."));
+      client.send(new Privmsg(channel.getName(), "I'm going away for a bit."));
+      client.send(new Away("I'm not listening to you right now."));
    }
 }
