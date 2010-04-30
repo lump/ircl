@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * .
  *
  * @author troy
- * @version $Id: Channel.java,v 1.3 2010/04/29 03:47:26 troy Exp $
+ * @version $Id: Channel.java,v 1.4 2010/04/30 01:48:03 troy Exp $
  */
 public class Channel {
 
@@ -200,9 +200,12 @@ public class Channel {
       this(name, null);
    }
 
+   public static boolean isValidChannelName(String channel) {
+      return channel.matches("^[\\&\\#\\+\\!].*");
+   }
+
    public Channel(String name, String password) throws IllegalChannelException {
-      if (!name.matches("^[\\&\\#\\+\\!].*"))
-         throw new IllegalChannelException("Channels must start with any of &, #, +, !");
+      if (!isValidChannelName(name)) throw new IllegalChannelException("Channels must start with any of &, #, +, !");
       this.name = name;
       this.password = password;
 

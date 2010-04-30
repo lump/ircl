@@ -7,7 +7,7 @@ import java.util.HashMap;
  * User.
  *
  * @author troy
- * @version $Id: User.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: User.java,v 1.3 2010/04/30 01:48:03 troy Exp $
  */
 public class User extends Command {
    String user;
@@ -82,16 +82,13 @@ public class User extends Command {
 
    public User(String user, String realName, Mode... modes) {
       super();
-      this.user = user;
-      this.realName = realName;
+      this.user = (user == null ? System.getProperty("user.name") : user);
+      this.realName = realName == null ? this.user : realName;
       this.modes = modes;
    }
 
    public User(String realName, Mode... modes) {
-      super();
-      this.user = System.getProperty("user.name");
-      this.realName = realName;
-      this.modes = modes;
+      this(null, realName, modes);
    }
 
    public User setModes(Mode... modes) {

@@ -8,7 +8,7 @@ import java.util.Iterator;
  * Command skeleton.
  *
  * @author troy
- * @version $Id: Command.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Command.java,v 1.3 2010/04/30 01:48:03 troy Exp $
  */
 public abstract class Command {
    CommandName commandName;
@@ -61,5 +61,15 @@ public abstract class Command {
          }
       }
       return sb.toString();
+   }
+
+   @Override
+   public boolean equals(Object o) {
+      return this == o || (o instanceof Command  && !toString().equals(o.toString()));
+   }
+
+   @Override
+   public int hashCode() {
+      return commandName.hashCode() + toString().hashCode();
    }
 }
