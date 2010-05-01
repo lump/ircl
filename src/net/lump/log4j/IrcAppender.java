@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * This provides a log4j IRC appender.
  *
  * @author troy
- * @version $Id: IrcAppender.java,v 1.3 2010/04/30 22:28:58 troy Exp $
+ * @version $Id: IrcAppender.java,v 1.4 2010/05/01 01:08:55 troy Exp $
  */
 public class IrcAppender extends AppenderSkeleton {
 
@@ -74,8 +74,8 @@ public class IrcAppender extends AppenderSkeleton {
       this.operUser = operUser;
    }
 
-   public void setOperPassword(String operPassword) {
-      this.operPass = operPassword;
+   public void setOperPass(String operPass) {
+      this.operPass = operPass;
    }
 
    public void setChannel(String channel) {
@@ -95,25 +95,27 @@ public class IrcAppender extends AppenderSkeleton {
          public void handleCommand(Prefix prefix, CommandName c, String[] args, String message) {
             switch (c) {
                case PRIVMSG:
-                  Matcher m = Pattern.compile("^\\s*"+ client.getNick()+",\\s*(.+)$",Pattern.CASE_INSENSITIVE).matcher(message);
-                  if (m.matches() && m.group(1) != null) {
-                     Matcher ct = Pattern.compile("^(greetings|hi|hello|welcome).*$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
-                     if (ct.matches() && ct.group(1) != null) {
-                        client.send(new Privmsg(channel.getName(),
-                            String.format("And %s to you, too, %s.", ct.group(1).toLowerCase(), prefix.getNick())));
-                     }
-                  }
-                  Matcher mt = Pattern.compile("^threshold\\s+(.+?)$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
-                  if (mt.matches() && mt.group(1) != null) {
-                     if (mt.group(1).equals("?")) {
-                        client.send(new Privmsg(channel.getName(), String.format(
-                            "My log4j appender threshold is %s, %s.", getThreshold().toString(), prefix.getNick())));
-                     }
-                     else {
-                        Level level = Level.toLevel(mt.group(1));
-                        setThreshold(level);
-                        client.send(new Privmsg(channel.getName(), String.format(
-                            "Ok, I set my log4j appender threshold to %s, %s.", level.toString(), prefix.getNick())));
+                  if (args[0] != null && args[0].equals(channel.getName())) {
+                     Matcher m = Pattern.compile("^\\s*"+ client.getNick().name()+",\\s*(.+)$",Pattern.CASE_INSENSITIVE).matcher(message);
+                     if (m.matches() && m.group(1) != null) {
+                        Matcher ct = Pattern.compile("^(greetings|hi|hello|welcome).*$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
+                        if (ct.matches() && ct.group(1) != null) {
+                           client.send(new Privmsg(channel.getName(),
+                               String.format("And %s to you, too, %s.", ct.group(1).toLowerCase(), prefix.getNick())));
+                        }
+                        Matcher mt = Pattern.compile("^threshold\\s+(.+?)$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
+                        if (mt.matches() && mt.group(1) != null) {
+                           if (mt.group(1).equals("?")) {
+                              client.send(new Privmsg(channel.getName(), String.format(
+                                  "My log4j appender threshold is %s, %s.", getThreshold().toString(), prefix.getNick())));
+                           }
+                           else {
+                              Level level = Level.toLevel(mt.group(1));
+                              setThreshold(level);
+                              client.send(new Privmsg(channel.getName(), String.format(
+                                  "Ok, I set my log4j appender threshold to %s, %s.", level.toString(), prefix.getNick())));
+                           }
+                        }
                      }
                   }
 
@@ -179,6 +181,7 @@ public class IrcAppender extends AppenderSkeleton {
       }
 
       if (!client.isRegistered()) client.connect();
+
    }
 
    Pattern emptyWhiteSpace = Pattern.compile("^\\s*$");
@@ -187,6 +190,7 @@ public class IrcAppender extends AppenderSkeleton {
    public void append(LoggingEvent event) {
 
       if (client == null || !client.isRegistered()) activateOptions();
+      if (client == null) return;
       if (client.getChannel(channel.getName()) == null) client.send(new Join(channel));
       if (client.isAway()) client.send(new Away(null));
 

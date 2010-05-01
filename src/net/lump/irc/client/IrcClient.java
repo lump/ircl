@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * This keeps track of Connection State.
  *
  * @author troy
- * @version $Id: IrcClient.java,v 1.2 2010/04/30 22:27:04 troy Exp $
+ * @version $Id: IrcClient.java,v 1.3 2010/05/01 01:08:55 troy Exp $
  */
 public class IrcClient {
 
@@ -310,15 +310,6 @@ public class IrcClient {
          try {
             CommandName commandName = CommandName.valueOf(messageMatcher.group(2));
 
-            switch(commandName) {
-               // handle PING here automatically
-               case PING:
-                  Pong pong = new Pong(IrcClient.this.getIrcHost(), message);
-                  send(pong);
-                  logger.debug("Sent pong: " + pong);
-                  break;
-            }
-
             for (IrcEventListener l : getListeners())
                l.handleCommand(prefix, commandName, arguments.toArray(new String[arguments.size()]), message);
 
@@ -404,6 +395,11 @@ public class IrcClient {
                if (message != null && message.matches("^[Cc][Ll][Oo][Ss][Ii][Nn][Gg].*$"))
                   for (IrcEventListener l : getListeners()) l.handleDisconnected(args, message);
                break;
+            case PING:
+               Pong pong = new Pong(IrcClient.this.getIrcHost(), message);
+               send(pong);
+               logger.debug("Sent pong: " + pong);
+               break;
             default:
                logger.debug(String.format(
                    "%s %s %s %s %s", server, prefix, c.name(), (Arrays.asList(args)).toString(), message));
@@ -416,6 +412,7 @@ public class IrcClient {
 
       public void handleDisconnected(String[] args, String message) {
          logger.warn(message);
+         channels.clear();
          registered = false;
          operator = false;
       }
@@ -477,9 +474,9 @@ public class IrcClient {
                            if (line == null) throw new EOFException("End of file reached");
                            handleMessage(line);
                         }
-                     } catch (Exception ignore) {
+                     } catch (Exception e) {
+                        logger.error(e);
                      } finally {
-
                         if (socket != null) try { socket.close(); } catch (IOException ignore) { }
                         socket = null;
 
@@ -516,6 +513,11 @@ public class IrcClient {
                      Command command = commandQueue.take();
 
                      while (shouldWait(command)) {
+                        if (!commandQueue.isEmpty())
+                           for (Command c : commandQueue)
+                              if (!shouldWait(c))
+                                 if (commandQueue.remove(c))
+                                    send(c);
                         while (commandQueue.peek() != null && !shouldWait(commandQueue.peek())) takeAndSend();
                         synchronized (commandQueueMutex) { commandQueueMutex.wait(1000); }
                      }
@@ -548,8 +550,6 @@ public class IrcClient {
                handleDisconnected("Socket connection to " + server + " failed: " + e.getMessage());
             }
          }
-
       }
-
    }
 }
