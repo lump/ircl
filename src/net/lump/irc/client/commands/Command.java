@@ -8,7 +8,7 @@ import java.util.Iterator;
  * Command skeleton.
  *
  * @author troy
- * @version $Id: Command.java,v 1.3 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: Command.java,v 1.4 2010/05/01 20:22:04 troy Exp $
  */
 public abstract class Command {
    CommandName commandName;
@@ -25,7 +25,7 @@ public abstract class Command {
       return commandName;
    }
 
-   public abstract String[] getArgs();
+   protected abstract String[] getArgs();
 
    public String toString() {
       if (commandName != CommandName.UNKNOWN)

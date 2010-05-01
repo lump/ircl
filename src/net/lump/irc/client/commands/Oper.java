@@ -4,20 +4,19 @@ package net.lump.irc.client.commands;
  * Oper.
  *
  * @author troy
- * @version $Id: Oper.java,v 1.1 2010/04/28 03:12:47 troy Exp $
+ * @version $Id: Oper.java,v 1.2 2010/05/01 20:22:04 troy Exp $
  */
 public class Oper extends Command {
    String name;
    String password;
 
    public Oper(String name, String password) {
-      super();
       this.name = name;
       this.password = password;
    }
 
    @Override
-   public String[] getArgs() {
+   protected String[] getArgs() {
       return new String[]{name, password};
    }
 }

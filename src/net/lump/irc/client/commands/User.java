@@ -7,7 +7,7 @@ import java.util.HashMap;
  * User.
  *
  * @author troy
- * @version $Id: User.java,v 1.3 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: User.java,v 1.4 2010/05/01 20:22:04 troy Exp $
  */
 public class User extends Command {
    String user;
@@ -81,7 +81,6 @@ public class User extends Command {
    }
 
    public User(String user, String realName, Mode... modes) {
-      super();
       this.user = (user == null ? System.getProperty("user.name") : user);
       this.realName = realName == null ? this.user : realName;
       this.modes = modes;
@@ -109,7 +108,7 @@ public class User extends Command {
    }
 
    @Override
-   public String[] getArgs() {
+   protected String[] getArgs() {
       return new String[]{user, Integer.toString(Mode.userBits(modes)), "*", ":"+realName };
    }
 }

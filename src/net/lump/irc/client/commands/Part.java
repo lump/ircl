@@ -8,18 +8,17 @@ import java.util.Arrays;
  * Part from a channel or channels.
  *
  * @author troy
- * @version $Id: Part.java,v 1.1 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Part.java,v 1.2 2010/05/01 20:22:04 troy Exp $
  */
 public class Part extends Command{
    private Channel[] channels;
 
    public Part(Channel... c) {
-      super();
       channels = c;
    }
 
    @Override
-   public String[] getArgs() {
+   protected String[] getArgs() {
       return new String[]{join(Arrays.asList(channels), ",")};
    }
 

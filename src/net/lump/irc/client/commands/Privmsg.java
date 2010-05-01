@@ -6,7 +6,7 @@ import net.lump.irc.client.Channel;
  * Privmsg.
  *
  * @author troy
- * @version $Id: Privmsg.java,v 1.2 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: Privmsg.java,v 1.3 2010/05/01 20:22:04 troy Exp $
  */
 public class Privmsg extends Command {
    String target;
@@ -26,11 +26,11 @@ public class Privmsg extends Command {
    }
 
    public boolean targetIsChannel() {
-     return Channel.isValidChannelName(target); 
+     return Channel.isValidChannelName(target);
    }
 
    @Override
-   public String[] getArgs() {
+   protected String[] getArgs() {
       return new String[]{target, ":"+(message == null ? "" : message)};
    }
 }

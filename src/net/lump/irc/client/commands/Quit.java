@@ -5,7 +5,7 @@ package net.lump.irc.client.commands;
  * Terminate the connection.
  *
  * @author troy
- * @version $Id: Quit.java,v 1.1 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: Quit.java,v 1.2 2010/05/01 20:22:04 troy Exp $
  */
 public class Quit extends Command {
 
@@ -16,7 +16,7 @@ public class Quit extends Command {
    }
 
    @Override
-   public String[] getArgs() {
+   protected String[] getArgs() {
       return new String[]{":"+message};
    }
 }

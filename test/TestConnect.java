@@ -14,7 +14,7 @@ import java.util.HashMap;
  * .
  *
  * @author troy
- * @version $Id: TestConnect.java,v 1.4 2010/04/30 01:48:03 troy Exp $
+ * @version $Id: TestConnect.java,v 1.5 2010/05/01 20:22:04 troy Exp $
  */
 public class TestConnect {
 
@@ -22,6 +22,10 @@ public class TestConnect {
 
    static {
       BasicConfigurator.configure();
+   }
+
+   public synchronized void doNotify() {
+      super.notify();
    }
 
    @Test
@@ -34,8 +38,6 @@ public class TestConnect {
       checkFlags.put(CommandName.MODE, false);
       checkFlags.put(CommandName.JOIN, false);
       checkFlags.put(CommandName.PART, false);
-      checkFlags.put("Disconnected", false);
-      final TestConnect thisObject = this;
 
       User user = new User("Testing 1 2 3", User.Mode.invisible, User.Mode.wallops);
       Nick nick = new Nick("testing");
@@ -49,7 +51,7 @@ public class TestConnect {
                logger.info("got " + r);
                checkFlags.put(r, true);
             }
-            if (done(checkFlags)) synchronized(thisObject) { thisObject.notify(); }
+            doNotify();
          }
 
          @Override
@@ -67,7 +69,7 @@ public class TestConnect {
                      logger.info("got " + c);
                      checkFlags.put(c, true); break;
                }
-            if (done(checkFlags)) synchronized(thisObject) { thisObject.notify(); }
+            doNotify();
          }
 
          public void handleNickNameInUse(String[] args, String message) {
@@ -75,11 +77,13 @@ public class TestConnect {
                client.setNick(client.getNick().increment());
             }
             client.send(client.getNick());
+            doNotify();
          }
 
          public void handleDisconnected(String[] args, String message) {
             logger.info(message);
             checkFlags.put("Disconnected", true);
+            doNotify();
          }
       });
 
@@ -90,10 +94,13 @@ public class TestConnect {
       client.send(new Join(channel));
       client.send(new Privmsg(channel.getName(), "Hello World"));
       client.send(new Part(channel));
-      client.send(new Quit("I'm outta here"));
 
       long time = System.currentTimeMillis();
       while (!done(checkFlags) && (time > (System.currentTimeMillis() - 30000)))
+         synchronized (this) { wait(1000); }
+
+      client.send(new Quit("I'm outta here"));
+      while (!checkFlags.containsKey("Disconnected") && (time > (System.currentTimeMillis() - 30000)))
          synchronized (this) { wait(1000); }
 
       assert done(checkFlags) : "didn't get all expected messages";

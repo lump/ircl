@@ -21,9 +21,33 @@ import java.util.regex.Pattern;
 
 /**
  * This provides a log4j IRC appender.
+ * You will have to configure the server to have a client class that can flood without consequence.  Some
+ * Servers require IRC operator status to allow flooding.
+ *
+ * Configure log4j an appender like this (host, port, and nick are required):
+ * <pre>
+
+   &lt;appender name="IRC_LOG" class="net.lump.log4j.IrcAppender"&gt;
+      &lt;errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/&gt;
+      &lt;param name="port" value="6667"/&gt;
+      &lt;param name="host" value="irc.domain.com"/&gt;
+      &lt;param name="nick" value="log"/&gt;
+      &lt;param name="operUser" value="oper"/&gt;
+      &lt;param name="operPass" value="secret"/&gt;
+      &lt;param name="channel" value="#applog"/&gt;
+      &lt;param name="Threshold" value="INFO"/&gt;
+
+      &lt;layout class="org.apache.log4j.PatternLayout"&gt;
+         &lt;param name="ConversionPattern" value="%m%n"/&gt;
+      &lt;/layout&gt;
+   &lt;/appender&gt;
+
+   </pre>
+ * You can provide multiple appender configurations that have identical host, port, and nick but have a different
+ * channel, and the appender will share the same connection for those log messages.
  *
  * @author troy
- * @version $Id: IrcAppender.java,v 1.4 2010/05/01 01:08:55 troy Exp $
+ * @version $Id: IrcAppender.java,v 1.5 2010/05/01 20:22:04 troy Exp $
  */
 public class IrcAppender extends AppenderSkeleton {
 

@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * .
  *
  * @author troy
- * @version $Id: TestIrcAppender.java,v 1.1 2010/04/30 22:27:04 troy Exp $
+ * @version $Id: TestIrcAppender.java,v 1.2 2010/05/01 20:22:04 troy Exp $
  */
 public class TestIrcAppender {
    private static volatile int blah = 0;
@@ -21,7 +21,7 @@ public class TestIrcAppender {
       BasicConfigurator.configure();
       blort(
           getIRCLogger("#soar"),
-          getIRCLogger("#soar-servlets"),
+          getIRCLogger("#soar-checks"),
           getIRCLogger("#soar-one"),
           getIRCLogger("#soar-two"),
           getIRCLogger("#soar-three"));
@@ -70,7 +70,7 @@ public class TestIrcAppender {
       //a.setNick("test" + (++blah));
       a.setNick("test");
       a.setOperUser("soar");
-      a.setOperPassword("billy.go");
+      a.setOperPass("billy.go");
       a.setChannel(channel);
       a.setRealName("Troy Bowman");
       a.setThreshold(Level.ALL);

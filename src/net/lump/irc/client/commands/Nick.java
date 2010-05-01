@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  * A Nick.
  *
  * @author troy
- * @version $Id: Nick.java,v 1.3 2010/04/30 22:27:04 troy Exp $
+ * @version $Id: Nick.java,v 1.4 2010/05/01 20:22:04 troy Exp $
  */
 public class Nick extends Command {
    private String nick;
@@ -17,7 +17,6 @@ public class Nick extends Command {
 
    private Nick(){}
    public Nick(String nick) throws IllegalNickException {
-      super();
       if (!nick.matches("^[A-Za-z].*")) throw new IllegalNickException("nicknames must start with a letter");
       if (nick.length() > maxLength) nick = nick.substring(0, 15);
       this.nick = nick;
@@ -53,7 +52,7 @@ public class Nick extends Command {
       return newNickDisregardingException(tempNick);
    }
 
-   public String[] getArgs() {
+   protected String[] getArgs() {
       return new String[]{":" + nick};
    }
 }
