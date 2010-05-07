@@ -8,9 +8,9 @@ import java.util.Arrays;
  * Part from a channel or channels.
  *
  * @author troy
- * @version $Id: Part.java,v 1.2 2010/05/01 20:22:04 troy Exp $
+ * @version $Id: Part.java,v 1.3 2010/05/07 18:42:22 troy Exp $
  */
-public class Part extends Command{
+public class Part extends Command {
    private Channel[] channels;
 
    public Part(Channel... c) {
@@ -21,5 +21,4 @@ public class Part extends Command{
    protected String[] getArgs() {
       return new String[]{join(Arrays.asList(channels), ",")};
    }
-
 }

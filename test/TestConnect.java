@@ -14,7 +14,7 @@ import java.util.HashMap;
  * .
  *
  * @author troy
- * @version $Id: TestConnect.java,v 1.5 2010/05/01 20:22:04 troy Exp $
+ * @version $Id: TestConnect.java,v 1.6 2010/05/07 18:42:22 troy Exp $
  */
 public class TestConnect {
 
@@ -24,8 +24,8 @@ public class TestConnect {
       BasicConfigurator.configure();
    }
 
-   public synchronized void doNotify() {
-      super.notify();
+   public synchronized void doNotifyAll() {
+      synchronized(logger) { logger.notifyAll(); }
    }
 
    @Test
@@ -51,7 +51,7 @@ public class TestConnect {
                logger.info("got " + r);
                checkFlags.put(r, true);
             }
-            doNotify();
+            doNotifyAll();
          }
 
          @Override
@@ -69,27 +69,26 @@ public class TestConnect {
                      logger.info("got " + c);
                      checkFlags.put(c, true); break;
                }
-            doNotify();
+            doNotifyAll();
          }
 
-         public void handleNickNameInUse(String[] args, String message) {
-            if (args[1].equals(client.getNick().name())) {
+         public void handleNickProblem(Prefix prefix, Response r, String[] args, String message) {
+            if (args[1].equals(client.getNick().name()))
                client.setNick(client.getNick().increment());
-            }
             client.send(client.getNick());
-            doNotify();
+            doNotifyAll();
          }
 
-         public void handleDisconnected(String[] args, String message) {
+         public void onDisconnect(String[] args, String message) {
             logger.info(message);
             checkFlags.put("Disconnected", true);
-            doNotify();
+            doNotifyAll();
          }
       });
 
       client.connect();
 
-      Channel channel = new Channel("#soar");
+      Channel channel = new Channel("#test");
 
       client.send(new Join(channel));
       client.send(new Privmsg(channel.getName(), "Hello World"));
@@ -97,11 +96,11 @@ public class TestConnect {
 
       long time = System.currentTimeMillis();
       while (!done(checkFlags) && (time > (System.currentTimeMillis() - 30000)))
-         synchronized (this) { wait(1000); }
+         synchronized (logger) { logger.wait(1000); }
 
       client.send(new Quit("I'm outta here"));
       while (!checkFlags.containsKey("Disconnected") && (time > (System.currentTimeMillis() - 30000)))
-         synchronized (this) { wait(1000); }
+         synchronized (logger) { logger.wait(1000); }
 
       assert done(checkFlags) : "didn't get all expected messages";
    }

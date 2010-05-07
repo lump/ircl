@@ -8,6 +8,7 @@ import net.lump.irc.client.commands.*;
 import net.lump.irc.client.exception.IllegalChannelException;
 import net.lump.irc.client.exception.IllegalNickException;
 import net.lump.irc.client.listeners.AbstractIrcEventListener;
+import net.lump.irc.client.listeners.ChannelListener;
 import net.lump.irc.client.listeners.IrcEventListener;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
@@ -20,11 +21,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This provides a log4j IRC appender.
- * You will have to configure the server to have a client class that can flood without consequence.  Some
- * Servers require IRC operator status to allow flooding.
+ * <p>This provides a log4j IRC appender.</p>
+ * <p><b>Please realize that IRC usually has mechanisms that prevent flooding.  If you are logging to an IRC server on
+ * your LAN, and its clients are also on your LAN, then flooding is not an issue and can be safely turned off.  Some
+ * IRC servers have oper flags that allow an IRC OPER to flood without penalty.  If you have a high-volume logging,
+ * you will need to coordinate with your IRC server's administrator to somehow allow flooding without penalty.</b></p>
  *
- * Configure log4j an appender like this (host, port, and nick are required):
+ * <p>Configure log4j an appender like this (host, port, and nick are required):
  * <pre>
 
    &lt;appender name="IRC_LOG" class="net.lump.log4j.IrcAppender"&gt;
@@ -44,10 +47,10 @@ import java.util.regex.Pattern;
 
    </pre>
  * You can provide multiple appender configurations that have identical host, port, and nick but have a different
- * channel, and the appender will share the same connection for those log messages.
+ * channel, and the appender will share the same connection for those log messages.</p>
  *
  * @author troy
- * @version $Id: IrcAppender.java,v 1.5 2010/05/01 20:22:04 troy Exp $
+ * @version $Id: IrcAppender.java,v 1.6 2010/05/07 18:42:22 troy Exp $
  */
 public class IrcAppender extends AppenderSkeleton {
 
@@ -104,71 +107,81 @@ public class IrcAppender extends AppenderSkeleton {
 
    public void setChannel(String channel) {
       try {
-         this.channel = new Channel(channel);
+         this.channel = new Channel(channel).addListener(channelListener);
       } catch (IllegalChannelException e) {
          LogLog.error("Nick \"" + nick + "\" does not follow IRC channel format");
       }
    }
 
+   ChannelListener channelListener = new ChannelListener() {
+
+      public void onNames(String[] names) {
+      }
+
+      public void onJoin(Prefix prefix, String message) {
+         if (prefix.getNick().equals(client.getNick().name()) && message.equals(channel.getName()))
+            client.send(new Privmsg(channel.getName(), String.format(
+                "Hello, I'm Log4j appender \"%s\" and my threshold is %s", name, getThreshold())));
+         else if (message.equals(channel.getName())) {
+            client.send(new Privmsg(channel.getName(), String.format(
+                "Hello, " + prefix.getNick() + ".  Welcome to " + channel.getName())));
+         }
+      }
+
+      public void onTopic(String topic) {
+      }
+
+      public void onMode(Channel.Mode[] modes, String[] args) {
+      }
+
+      public void onPart(Prefix prefix, String message) {
+      }
+
+      public void onQuit(Prefix prefix, String message) {
+      }
+
+      public void onPrivmsg(Prefix prefix, String message) {
+         Matcher m = Pattern.compile("^\\s*"+ client.getNick().name()+",\\s*(.+)$",Pattern.CASE_INSENSITIVE).matcher(message);
+         if (m.matches() && m.group(1) != null) {
+            Matcher ct = Pattern.compile("^(greetings|hi|hello|welcome).*$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
+            if (ct.matches() && ct.group(1) != null) {
+               client.send(new Privmsg(channel.getName(),
+                   String.format("And %s to you, too, %s.", ct.group(1).toLowerCase(), prefix.getNick())));
+            }
+            Matcher mt = Pattern.compile("^threshold\\s+(.+?)$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
+            if (mt.matches() && mt.group(1) != null) {
+               if (mt.group(1).equals("?")) {
+                  client.send(new Privmsg(channel.getName(), String.format(
+                      "My log4j appender threshold is %s, %s.", getThreshold().toString(), prefix.getNick())));
+               }
+               else {
+                  Level level = Level.toLevel(mt.group(1));
+                  setThreshold(level);
+                  client.send(new Privmsg(channel.getName(), String.format(
+                      "Ok, I set my log4j appender threshold to %s, %s.", level.toString(), prefix.getNick())));
+               }
+            }
+         }
+      }
+
+      public void onNotice(Prefix prefix, String message) {
+      }
+   };
+
    IrcEventListener listener = new AbstractIrcEventListener() {
-         @Override
-         public void handleResponse(Prefix prefix, Response r, String[] args, String message) {
+      public void handleNickProblem(Prefix prefix, Response r, String[] args, String message) {
+         if (args[1].equals(client.getNick().name())) {
+            client.setNick(client.getNick().increment());
          }
+         client.send(client.getNick());
+      }
 
-         @Override
-         public void handleCommand(Prefix prefix, CommandName c, String[] args, String message) {
-            switch (c) {
-               case PRIVMSG:
-                  if (args[0] != null && args[0].equals(channel.getName())) {
-                     Matcher m = Pattern.compile("^\\s*"+ client.getNick().name()+",\\s*(.+)$",Pattern.CASE_INSENSITIVE).matcher(message);
-                     if (m.matches() && m.group(1) != null) {
-                        Matcher ct = Pattern.compile("^(greetings|hi|hello|welcome).*$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
-                        if (ct.matches() && ct.group(1) != null) {
-                           client.send(new Privmsg(channel.getName(),
-                               String.format("And %s to you, too, %s.", ct.group(1).toLowerCase(), prefix.getNick())));
-                        }
-                        Matcher mt = Pattern.compile("^threshold\\s+(.+?)$",Pattern.CASE_INSENSITIVE).matcher(m.group(1));
-                        if (mt.matches() && mt.group(1) != null) {
-                           if (mt.group(1).equals("?")) {
-                              client.send(new Privmsg(channel.getName(), String.format(
-                                  "My log4j appender threshold is %s, %s.", getThreshold().toString(), prefix.getNick())));
-                           }
-                           else {
-                              Level level = Level.toLevel(mt.group(1));
-                              setThreshold(level);
-                              client.send(new Privmsg(channel.getName(), String.format(
-                                  "Ok, I set my log4j appender threshold to %s, %s.", level.toString(), prefix.getNick())));
-                           }
-                        }
-                     }
-                  }
-
-                  break;
-               case JOIN:
-                  if (prefix.getNick().equals(client.getNick().name()) && message.equals(channel.getName()))
-                     client.send(new Privmsg(channel.getName(), String.format(
-                         "Hello, I'm Log4j appender \"%s\" and my threshold is %s", name, getThreshold())));
-                  else if (prefix.getNick().matches("^[Tt]roy|[Ff]roy|[Ll]ump|[Bb]owmant") && message.equals(channel.getName())) {
-                     client.send(new Privmsg(channel.getName(), String.format(
-                         "Hello, Troy.  Welcome to " + channel.getName())));
-                  }
-                  break;
-            }
-         }
-
-         public void handleNickNameInUse(String[] args, String message) {
-            if (args[1].equals(client.getNick().name())) {
-               client.setNick(client.getNick().increment());
-            }
-            client.send(client.getNick());
-         }
-
-         public void handleDisconnected(String[] args, String message) {
-            LogLog.error("Disconnected");
-            try { Thread.sleep(1000); } catch (InterruptedException ignore) { }
-            activateOptions();
-         }
-      };
+      public void onDisconnect(String[] args, String message) {
+         LogLog.error("Disconnected");
+         try { Thread.sleep(1000); } catch (InterruptedException ignore) { }
+         activateOptions();
+      }
+   };
 
    @Override
    public void activateOptions() {
@@ -241,7 +254,8 @@ public class IrcAppender extends AppenderSkeleton {
 
    @Override
    public void close() {
-      client.send(new Privmsg(channel.getName(), "I'm going away for a bit."));
-      client.send(new Away("I'm not listening to you right now."));
+      if (!client.isAway()) {
+         client.send(new Away("I'm not listening to you right now."));
+      }
    }
 }

@@ -1,68 +1,70 @@
 package net.lump.irc.client.commands;
 
+import static net.lump.irc.client.State.States;
+import static net.lump.irc.client.State.States.*;
+
 /**
- * Valid IRC Commands.
+ * Valid IRC Command Names.  These are used in both {@link Command} construction as well as server command parsing.
  *
  * @author troy
- * @version $Id: CommandName.java,v 1.2 2010/04/29 03:06:09 troy Exp $
+ * @version $Id: CommandName.java,v 1.3 2010/05/07 18:42:22 troy Exp $
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public enum CommandName {
-   UNKNOWN,
-   PASS(false),
-   NICK(false),
-   USER(false),
-   OPER,
-   SERVICE,
-   QUIT(false),
-   SQUIT,
-   JOIN,
-   PART,
-   MODE,
-   TOPIC,
-   NAMES,
-   LIST,
-   INVITE,
-   KICK,
-   PRIVMSG,
-   NOTICE,
-   MOTD,
-   LUSERS,
-   VERSION,
-   STATS,
-   LINKS,
-   TIME,
-   CONNECT,
-   TRACE,
-   ADMIN,
-   INFO,
-   SERVLIST,
-   SQUERY,
-   WHO,
-   WHOIS,
-   WHOWAS,
-   KILL,
-   PING,
-   PONG,
-   ERROR,
-   AWAY,
-   REHASH,
-   DIE,
-   RESTART,
-   SUMMON,
-   USERS,
-   WALLOPS,
-   USERHOST,
-   ISON;
+   UNKNOWN(NONE),
+   PASS(CONNECTED),
+   NICK(CONNECTED),
+   USER(CONNECTED),
+   OPER(REGISTERED),
+   SERVICE(REGISTERED),
+   QUIT(CONNECTED),
+   SQUIT(REGISTERED),
+   JOIN(REGISTERED),
+   PART(JOINED),
+   MODE(REGISTERED),
+   TOPIC(REGISTERED),
+   NAMES(REGISTERED),
+   LIST(REGISTERED),
+   INVITE(JOINED),
+   KICK(JOINED),
+   PRIVMSG(JOINED),
+   NOTICE(REGISTERED),
+   MOTD(REGISTERED),
+   LUSERS(REGISTERED),
+   VERSION(REGISTERED),
+   STATS(REGISTERED),
+   LINKS(REGISTERED),
+   TIME(REGISTERED),
+   CONNECT(IRC_OPERATOR),
+   TRACE(REGISTERED),
+   ADMIN(CONNECTED),
+   INFO(REGISTERED),
+   SERVLIST(REGISTERED),
+   SQUERY(REGISTERED),
+   WHO(REGISTERED),
+   WHOIS(REGISTERED),
+   WHOWAS(REGISTERED),
+   KILL(IRC_OPERATOR),
+   PING(REGISTERED),
+   PONG(REGISTERED),
+   ERROR(REGISTERED),
+   AWAY(REGISTERED),
+   REHASH(IRC_OPERATOR),
+   DIE(IRC_OPERATOR),
+   RESTART(IRC_OPERATOR),
+   SUMMON(REGISTERED),
+   USERS(REGISTERED),
+   WALLOPS(REGISTERED),
+   USERHOST(REGISTERED),
+   ISON(REGISTERED);
 
-   private boolean requiresRegistration = true;
+   private States requiredState;
 
-   private CommandName(){}
-   private CommandName(boolean registrationRequired){
-     requiresRegistration = registrationRequired;
+   private CommandName(States state) {
+      this.requiredState = state;
    }
 
-   public boolean requiresRegistration() {
-      return requiresRegistration;
+   public States getRequiredState() {
+      return this.requiredState;
    }
 }

@@ -7,7 +7,7 @@ import java.util.HashMap;
  * User.
  *
  * @author troy
- * @version $Id: User.java,v 1.4 2010/05/01 20:22:04 troy Exp $
+ * @version $Id: User.java,v 1.5 2010/05/07 18:42:22 troy Exp $
  */
 public class User extends Command {
    String user;
@@ -27,7 +27,7 @@ public class User extends Command {
       private int userBit;
       private boolean addable = false;
       private boolean removable = false;
-      private static HashMap<Character, Mode> revMap = new HashMap<Character, Mode>();
+      private static final HashMap<Character, Mode> reverseMap = new HashMap<Character, Mode>();
 
       private Mode(char m, boolean addable, boolean removable) {
          this(m, addable, removable, 0);
@@ -65,8 +65,11 @@ public class User extends Command {
 
       public static Mode modeOf(char c) {
          // bootstrap revmap because enums we can't refer to static hashmaps in their constructors
-         if (revMap.isEmpty()) for (Mode m : Mode.values()) revMap.put(m.modeChar, m);
-         return revMap.get(c);
+         if (reverseMap.isEmpty())
+            synchronized (reverseMap) { // only generate this once, and make other threads wait until it's generated.
+               if (reverseMap.isEmpty()) for (Mode m : Mode.values()) reverseMap.put(m.modeChar, m);
+            }
+         return reverseMap.get(c);
       }
 
       public static Mode[] parseString(String modes) {

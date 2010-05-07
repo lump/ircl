@@ -1,31 +1,43 @@
 import net.lump.log4j.IrcAppender;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.apache.log4j.*;
+import org.apache.log4j.spi.LoggingEvent;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 
 /**
- * .
+ * Tests the IRC Appender
  *
  * @author troy
- * @version $Id: TestIrcAppender.java,v 1.2 2010/05/01 20:22:04 troy Exp $
+ * @version $Id: TestIrcAppender.java,v 1.3 2010/05/07 18:42:22 troy Exp $
  */
 public class TestIrcAppender {
    private static volatile int blah = 0;
 
+   /**
+    * This tests the IRC Logger by starthing five threads and logs to all five at the same time.
+    */
    @Test
    public void TestIRCLogger() {
-      BasicConfigurator.configure();
-      blort(
-          getIRCLogger("#soar"),
-          getIRCLogger("#soar-checks"),
-          getIRCLogger("#soar-one"),
-          getIRCLogger("#soar-two"),
-          getIRCLogger("#soar-three"));
 
+      // empty configured log
+      BasicConfigurator.configure(new AppenderSkeleton(){
+         @Override
+         protected void append(LoggingEvent event) {
+            System.err.println(event.getRenderedMessage());
+         }
+         @Override
+         public boolean requiresLayout() { return false; }
+         @Override
+         public void close() {}
+      });
+
+      blort(
+          getIRCLogger("#test"),
+          getIRCLogger("#test-one"),
+          getIRCLogger("#test-two"),
+          getIRCLogger("#test-three"),
+          getIRCLogger("#test-four"));
    }
 
    class R implements Runnable {
@@ -51,7 +63,6 @@ public class TestIrcAppender {
          threads.add(t);
       }
       for (Thread t : threads) {
-         try {Thread.sleep(1000);} catch (InterruptedException ignore){}
          t.start();
       }
 
@@ -66,9 +77,9 @@ public class TestIrcAppender {
    private Logger getIRCLogger(String channel) {
       IrcAppender a = new IrcAppender();
       a.setPort(6667);
-      a.setHost("gargamel.sosstaffing.com");
+      a.setHost("localhost");  // you will need to be running an IRC server that listens to localhost
       //a.setNick("test" + (++blah));
-      a.setNick("test");
+      a.setNick("TestIRCLogger");
       a.setOperUser("soar");
       a.setOperPass("billy.go");
       a.setChannel(channel);

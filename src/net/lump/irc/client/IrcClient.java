@@ -1,6 +1,7 @@
 package net.lump.irc.client;
 
 import net.lump.irc.client.commands.*;
+import net.lump.irc.client.listeners.AbstractIrcEventListener;
 import net.lump.irc.client.listeners.IrcEventListener;
 import org.apache.log4j.Logger;
 
@@ -19,11 +20,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static net.lump.irc.client.State.States.*;
+
 /**
  * This keeps track of Connection State.
  *
  * @author troy
- * @version $Id: IrcClient.java,v 1.3 2010/05/01 01:08:55 troy Exp $
+ * @version $Id: IrcClient.java,v 1.4 2010/05/07 18:42:22 troy Exp $
  */
 public class IrcClient {
 
@@ -38,9 +41,7 @@ public class IrcClient {
    private String ircHost;
    private String ircId;
 
-   private volatile boolean registered = false;
-   private boolean operator = false;
-   private boolean away = false;
+   private final State state = new State();
 
    private User.Mode[] validUserModes;
    private Channel.Mode[] validChannelModes;
@@ -95,17 +96,11 @@ public class IrcClient {
    public void send(Command command) {
       if (command instanceof Join) for (Channel c : ((Join)command).getChannels()) putChannel(c);
 
-      // only add privmsgs if our queue isn't big
-      if (commandQueue.size() > MAX_COMMAND_QUEUE_SIZE && command instanceof Privmsg) {
-         logger.warn(String.format("Skipping message because commandQueue size is > %d: %s",
-             MAX_COMMAND_QUEUE_SIZE, ((Privmsg)command).getMessage()));
-         return;
-      }
-
+      logger.debug("<== Queueing: " + command);
       commandQueue.add(command);
 
       // notify anything waiting that we got a new command
-      synchronized(commandQueueMutex) { commandQueueMutex.notify(); }
+      synchronized(commandQueueMutex) { commandQueueMutex.notifyAll(); }
    }
 
    public void connect() {
@@ -114,19 +109,11 @@ public class IrcClient {
 
       if (!ircSocket.isConnected()) ircSocket.connect();
 
-      if (!registered) {
-         if (getPass() != null) send(getPass());
-         send(getUser());
-         send(getNick());
-
-         // this isn't a registration command, but it will be run after registration
-         if (getOper() != null) send(getOper());
-      }
    }
 
    public void disconnect(String reason) {
-      if (registered) { send(new Quit(reason)); }
-      ircSocket.abortConnection();
+      if (state.hasAny(CONNECTED, REGISTERED)) send(new Quit(reason));
+      else ircSocket.abortConnection();
    }
 
    public void addListener(IrcEventListener i) {
@@ -172,7 +159,7 @@ public class IrcClient {
    }
 
    public IrcClient setNick(Nick nick) {
-      if (registered && nick != null && !nick.equals(this.nick)) send(nick);
+      if (isRegistered() && nick != null && !nick.equals(this.nick)) send(nick);
       else this.nick = nick;
       return this;
    }
@@ -182,7 +169,7 @@ public class IrcClient {
    }
 
    public IrcClient setOper(Oper oper) {
-      if (registered && oper != null && !oper.equals(this.oper)) send(oper);
+      if (isRegistered() && oper != null && !oper.equals(this.oper)) send(oper);
       this.oper = oper;
       return this;
    }
@@ -227,10 +214,6 @@ public class IrcClient {
       return channels.get(channel);
    }
 
-   public boolean isAway() {
-      return away;
-   }
-
    public IrcClient removeChannel(String name) {
       channels.remove(name);
       return this;
@@ -241,12 +224,24 @@ public class IrcClient {
       return this;
    }
 
+   public boolean isConnected() {
+      return ircSocket != null && ircSocket.isConnected();
+   }
+
    public boolean isRegistered() {
-      return registered;
+      return state.has(REGISTERED);
    }
 
    public boolean isOperator() {
-      return operator;
+      return state.has(IRC_OPERATOR);
+   }
+
+   public boolean isJoined() {
+      return state.has(JOINED);
+   }
+
+   public boolean isAway() {
+      return state.has(AWAY);
    }
 
    public String toString() {
@@ -293,13 +288,13 @@ public class IrcClient {
          if (response == Response.Unknown_Response)
             logger.warn(String.format("Unknown response code: (%s) for message: %s", messageMatcher.group(2), line));
          else {
-            if (!registered
+            if (!isRegistered()
                 && response.getType() == Response.Type.Reply
                 && arguments.size() > 0
                 && arguments.get(0).equals(IrcClient.this.getNick().name())) {
-               registered = true;
+               fireRegistered();
                // notify anything waiting that we are registered now
-               synchronized(commandQueueMutex) { commandQueueMutex.notify(); }
+               synchronized(commandQueueMutex) { commandQueueMutex.notifyAll(); }
             }
 
             for (IrcEventListener l : IrcClient.this.getListeners())
@@ -311,7 +306,7 @@ public class IrcClient {
             CommandName commandName = CommandName.valueOf(messageMatcher.group(2));
 
             for (IrcEventListener l : getListeners())
-               l.handleCommand(prefix, commandName, arguments.toArray(new String[arguments.size()]), message);
+              l.handleCommand(prefix, commandName, arguments.toArray(new String[arguments.size()]), message);
 
          } catch (IllegalArgumentException iae) {
             logger.warn("Unknown Command: (" + messageMatcher.group(2) + ") for message: " + line);
@@ -319,18 +314,49 @@ public class IrcClient {
       }
    }
 
-   private void handleDisconnected(String line) {
-      for (IrcEventListener l : IrcClient.this.getListeners())
-         l.handleDisconnected(new String[0], line);
+
+   private void fireConnect() {
+      if (!state.has(CONNECTED)) {
+         state.add(CONNECTED);
+         if (getPass() != null) send(getPass());
+         send(getUser());
+         send(getNick());
+         if (getOper() != null) send(getOper());
+         for (IrcEventListener l : IrcClient.this.getListeners())
+            l.onConnect();
+         synchronized(commandQueueMutex) { commandQueueMutex.notifyAll(); }
+      }
    }
 
 
-   IrcEventListener changeListener = new IrcEventListener(){
+   private void fireRegistered() {
+      if (!state.has(REGISTERED)) {
+         state.add(REGISTERED);
+         for (IrcEventListener l : IrcClient.this.getListeners())
+            l.onRegistration();
+         synchronized(commandQueueMutex) { commandQueueMutex.notifyAll(); }
+      }
+   }
+
+
+   private void fireDisconnect(String[] args, String line) {
+      state.clear();
+      channels.clear();
+      for (IrcEventListener l : IrcClient.this.getListeners())
+         l.onDisconnect(args, line);
+   }
+
+
+   IrcEventListener changeListener = new AbstractIrcEventListener(){
       public void handleResponse(Prefix prefix, Response r, String[] args, String message) {
 
          switch(r) {
+            case RPL_HELLO:
+               //fireConnect();
+               break;
             case RPL_WELCOME:
                if (!nick.name().equals(args[0])) nick = Nick.newNickDisregardingException(args[0]);
+               fireRegistered();
                break;
             case RPL_YOURHOST:
                Matcher m = Pattern.compile("^Your\\s+host\\s+is\\s+(\\S+).*$").matcher(message);
@@ -345,17 +371,24 @@ public class IrcClient {
                ircId = args[1];
                break;
             case RPL_NOWAWAY:
-               if (args[0] != null && args[0].equals(nick.name())) away = true;
+               if (args[0] != null && args[0].equals(nick.name()))
+                  state.add(AWAY);
                break;
             case RPL_UNAWAY:
-               if (args[0] != null && args[0].equals(nick.name())) away = false;
+               if (args[0] != null && args[0].equals(nick.name()))
+                  state.remove(AWAY);
                break;
             case RPL_YOUREOPER:
-               operator = true;
+               state.add(IRC_OPERATOR);
+               break;
+            case ERR_ALREADYREGISTRED:
+               fireRegistered();
                break;
             case ERR_NICKNAMEINUSE:
+            case ERR_NICKCOLLISION:
+            case ERR_ERRONEUSNICKNAME:
                for (IrcEventListener l : getListeners())
-                  l.handleNickNameInUse(args, message);
+                  l.handleNickProblem(prefix, r, args, message);
                break;
             default:
                logger.debug(String.format(
@@ -371,8 +404,9 @@ public class IrcClient {
             case JOIN:
                if (channels.containsKey(message) && prefix.getNick().equals(nick.name())) {
                   channels.get(message).setJoined(true);
+                  state.add(JOINED);
                   // notify anything waiting that we got a join
-                  synchronized(commandQueueMutex) { commandQueueMutex.notify(); }
+                  synchronized(commandQueueMutex) { commandQueueMutex.notifyAll(); }
                }
                break;
             case PART:
@@ -382,7 +416,7 @@ public class IrcClient {
                }
                break;
             case NICK:
-               if (prefix.getNick().equals(nick)) nick = Nick.newNickDisregardingException(message);
+               if (prefix.getNick().equals(nick.name())) nick = Nick.newNickDisregardingException(message);
                else for (Channel channel : channels.values()) {
                   for (String nick : channel.getNicks())
                      if (nick.replaceAll("^[^A-Za-z]","").equals(prefix.getNick())) {
@@ -392,8 +426,9 @@ public class IrcClient {
                }
                break;
             case ERROR:
-               if (message != null && message.matches("^[Cc][Ll][Oo][Ss][Ii][Nn][Gg].*$"))
-                  for (IrcEventListener l : getListeners()) l.handleDisconnected(args, message);
+               if (message != null && message.matches("^[Cc][Ll][Oo][Ss][Ii][Nn][Gg].*$")) {
+                  fireDisconnect(args, message);
+               }
                break;
             case PING:
                Pong pong = new Pong(IrcClient.this.getIrcHost(), message);
@@ -406,16 +441,14 @@ public class IrcClient {
          }
       }
 
-      public void handleNickNameInUse(String[] args, String message) {
+      public void handleNickProblem(Prefix prefix, Response r, String[] args, String message) {
          // we don't handle this here
       }
 
-      public void handleDisconnected(String[] args, String message) {
-         logger.warn(message);
-         channels.clear();
-         registered = false;
-         operator = false;
+      public void onDisconnect(String[] args, String message) {
+         // we don't handle this here
       }
+
    };
 
 
@@ -438,17 +471,17 @@ public class IrcClient {
       }
 
       public boolean isConnected() {
-         return socket != null
-             && socket.isConnected()
-             && !socket.isClosed()
-             && !socket.isOutputShutdown()
-             && !socket.isInputShutdown()
-             && readerThread != null && readerThread.isAlive()
-             && writerThread != null && writerThread.isAlive();
+         return (state.has(CONNECTED)) ||
+             (socket != null
+                 && socket.isConnected()
+                 && !socket.isClosed()
+                 && !socket.isOutputShutdown()
+                 && !socket.isInputShutdown()
+                 && readerThread != null && readerThread.isAlive()
+                 && writerThread != null && writerThread.isAlive());
       }
 
-      protected void connect()
-      {
+      protected void connect() {
          synchronized(commandQueueMutex) {
 
             if (isConnected()) return;
@@ -483,7 +516,7 @@ public class IrcClient {
                         if (writerThread != null && (!writerThread.isInterrupted() || writerThread.isAlive()))
                            writerThread.interrupt();
 
-                        handleDisconnected("Reader Thread Closed");
+                        fireDisconnect(new String[0], "Reader Thread Closed");
                      }
                   }
                }, "IRC Reader");
@@ -493,34 +526,41 @@ public class IrcClient {
 
                writerThread = new Thread(new Runnable() {
 
-                  private boolean shouldWait(Command command) {
-
-                     if (!registered && command.getCommandName().requiresRegistration())
-                        return true;
-
+                  private boolean validStateFor(Command command) {
                      if (command instanceof Privmsg) {
                         Privmsg msg = (Privmsg)command;
-                        if (msg.targetIsChannel()
-                            && channels.contains(msg.getTarget())
-                            && !channels.get(msg.getTarget()).isJoined())
-                        return true;
+                        return !msg.targetIsChannel()                          // target isn't channel, it's ok
+                            || (channels.get(msg.getTarget()) != null          // not ok until join event on target
+                                && channels.get(msg.getTarget()).isJoined()    //
+                                && (oper == null || state.has(IRC_OPERATOR))); // if oper defined, not ok until event
                      }
-
-                     return false;
+                     else return state.has(command.getCommandName().getRequiredState());
                   }
 
                   private void takeAndSend() throws InterruptedException {
                      Command command = commandQueue.take();
 
-                     while (shouldWait(command)) {
+                     while (!validStateFor(command)) {
+                        logger.debug("-=- Waiting for proper state to send: " + command);
                         if (!commandQueue.isEmpty())
-                           for (Command c : commandQueue)
-                              if (!shouldWait(c))
+                           for (Command c : commandQueue) {
+                              if (validStateFor(command)) break; //nevermind
+
+                              if (validStateFor(c)) {
                                  if (commandQueue.remove(c))
                                     send(c);
-                        while (commandQueue.peek() != null && !shouldWait(commandQueue.peek())) takeAndSend();
+                              }
+                              else
+                                 // protect ourselves from a huge queue
+                                 if (c instanceof Privmsg
+                                     && commandQueue.size() > MAX_COMMAND_QUEUE_SIZE
+                                     && commandQueue.remove(c))
+                                    logger.debug("=|= Dropping off queue: " + c);
+                           }
+
                         synchronized (commandQueueMutex) { commandQueueMutex.wait(1000); }
                      }
+
                      send(command);
                   }
 
@@ -536,6 +576,7 @@ public class IrcClient {
                   }
 
                   private void send(Command command)  {
+                     logger.debug("==> Sending: "+command);
                      writer.print(command + "\r\n");
                      writer.flush();
                   }
@@ -544,10 +585,12 @@ public class IrcClient {
                writerThread.setDaemon(true);
                writerThread.start();
 
+               fireConnect();
+
             } catch (SocketTimeoutException e) {
-               handleDisconnected("Connect timed out to " + server);
+               fireDisconnect(new String[0], "Connect timed out to " + server);
             } catch (Exception e) {
-               handleDisconnected("Socket connection to " + server + " failed: " + e.getMessage());
+               fireDisconnect(new String[0], "Socket connection to " + server + " failed: " + e.getMessage());
             }
          }
       }

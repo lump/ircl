@@ -2,6 +2,7 @@ package net.lump.irc.client;
 
 import net.lump.irc.client.commands.CommandName;
 import net.lump.irc.client.exception.IllegalChannelException;
+import net.lump.irc.client.listeners.AbstractIrcEventListener;
 import net.lump.irc.client.listeners.ChannelListener;
 import net.lump.irc.client.listeners.IrcEventListener;
 import org.apache.log4j.Logger;
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * .
  *
  * @author troy
- * @version $Id: Channel.java,v 1.5 2010/04/30 22:27:04 troy Exp $
+ * @version $Id: Channel.java,v 1.6 2010/05/07 18:42:22 troy Exp $
  */
 public class Channel {
 
@@ -37,7 +38,7 @@ public class Channel {
       invitationMask('i');
 
       char modeChar;
-      private static HashMap<Character, Mode> revMap = new HashMap<Character, Mode>();
+      private static final HashMap<Character, Mode> reverseMap = new HashMap<Character, Mode>();
 
       private Mode(char m) {
          modeChar = m;
@@ -50,9 +51,12 @@ public class Channel {
       }
 
       public static Mode modeOf(char c) {
-         // bootstrap revmap because enums we can't refer to static hashmaps in their constructors
-         if (revMap.isEmpty()) for (Mode m : Mode.values()) revMap.put(m.modeChar, m);
-         return revMap.get(c);
+         // bootstrap revmap because we can't refer to static hashmaps in enum constructors
+         if (reverseMap.isEmpty())
+            synchronized (reverseMap) { // only generate this once, and make other threads wait until it's generated.
+               if (reverseMap.isEmpty()) for (Mode m : Mode.values()) reverseMap.put(m.modeChar, m);
+            }
+         return reverseMap.get(c);
       }
 
       public static Mode[] parseString(String modes) {
@@ -76,7 +80,7 @@ public class Channel {
    private static final Object placeholder  = new Object();
    private static final Logger logger = Logger.getLogger(Channel.class);
 
-   private IrcEventListener listener = new IrcEventListener() {
+   private IrcEventListener listener = new AbstractIrcEventListener() {
 
       public void handleResponse(Prefix prefix, Response r, String[] args, String message) {
          switch(r) {
@@ -145,18 +149,16 @@ public class Channel {
          }
       }
 
-      public void handleNickNameInUse(String[] args, String message) {
+      public void handleNickProblem(Prefix prefix, Response r, String[] args, String message) {
          // not to be used here
       }
 
-      public void handleDisconnected(String[] args, String message) {
+      public void onDisconnect(String[] args, String message) {
          // not to be used here
       }
-
    };
 
-   private static final ConcurrentHashMap<ChannelListener, Object> listeners
-       = new ConcurrentHashMap<ChannelListener, Object>();
+   private final ConcurrentHashMap<ChannelListener, Object> listeners = new ConcurrentHashMap<ChannelListener, Object>();
 
    {
       addListener(new ChannelListener(){

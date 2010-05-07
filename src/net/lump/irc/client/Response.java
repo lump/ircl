@@ -6,10 +6,10 @@ import static net.lump.irc.client.Response.Type.*;
 import static net.lump.irc.client.Response.Type.Error;
 
 /**
- * Server Response Codes.
+ * Server Response Codes.  This allows easily-read switch statements to handle replies.
  *
  * @author troy
- * @version $Id: Response.java,v 1.3 2010/04/30 22:27:04 troy Exp $
+ * @version $Id: Response.java,v 1.4 2010/05/07 18:42:22 troy Exp $
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public enum Response {
@@ -236,9 +236,10 @@ public enum Response {
 
    public static Response fromCode(String code) {
       // bootstrap if reversemap is empty (because you can't do this in the constructor for some beurocratic reason)
-      synchronized (reverseMap) {
-         if (reverseMap.isEmpty()) for (Response r : Response.values()) reverseMap.put(r.getCodeStr(), r);
-      }
+      if (reverseMap.isEmpty())
+         synchronized (reverseMap) { // only generate this once, and make other threads wait until it's generated.
+            if (reverseMap.isEmpty()) for (Response r : Response.values()) reverseMap.put(r.getCodeStr(), r);
+         }
       return reverseMap.containsKey(code) ? reverseMap.get(code) : Unknown_Response;
    }
 }
