@@ -8,13 +8,14 @@ import java.util.Iterator;
  * IRC Command skeleton.
  * <ul>
  * <li>POJOs that extend this define command parameters and all command argument requirements.</li>
+ * <li>The currently implemented commands is not comprehensive, feel free to implement more of them. </li>
  * <li>The Command Name is derived from the class name in uppercase, and must match an existing {@link CommandName}.</li>
  * <li>Commands must implement a {@link #getArgs} method to provide the arguments for this IRC command.</li>
  * <li>The {@link #getArgs} will be appended to the standardized {@link CommandName} when {@link #toString} is called.</li>
  * </ul>
  *
  * @author troy
- * @version $Id: Command.java,v 1.5 2010/05/07 18:42:22 troy Exp $
+ * @version $Id: Command.java,v 1.6 2010/05/08 03:34:50 troy Exp $
  */
 public abstract class Command {
    CommandName commandName;
