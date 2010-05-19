@@ -7,3 +7,8 @@ http://moepii.sourceforge.net/ so I wrote my own.
 My initial purpose for this library was an IRC Log4j Appender,
 so you get a Log4j appender as a gratuitous bonus.
 
+I've only implemented the IRC commands that are relevant to
+the Log4j Appender thus far, so this library may be incomplete
+for what you may need it for, although it is very easy to
+support more commands or handle more events.
+
