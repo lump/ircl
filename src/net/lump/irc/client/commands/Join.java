@@ -5,8 +5,7 @@ import net.lump.irc.client.Channel;
 /**
  * Join a channel or channels.
  *
- * @author troy
- * @version $Id: Join.java,v 1.3 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Join extends Command {
 

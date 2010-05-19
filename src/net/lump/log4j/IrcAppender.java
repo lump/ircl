@@ -49,8 +49,7 @@ import java.util.regex.Pattern;
  * You can provide multiple appender configurations that have identical host, port, and nick but have a different
  * channel, and the appender will share the same connection for those log messages.</p>
  *
- * @author troy
- * @version $Id: IrcAppender.java,v 1.6 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class IrcAppender extends AppenderSkeleton {
 

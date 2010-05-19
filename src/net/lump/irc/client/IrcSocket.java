@@ -16,8 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * The socket that is used to talk to the server.
  *
- * @author troy
- * @version $Id: IrcSocket.java,v 1.1 2010/04/30 01:48:03 troy Exp $
+ * @author M. Troy Bowman
  */
 public class IrcSocket {
 

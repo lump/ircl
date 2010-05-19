@@ -6,8 +6,7 @@ import java.util.HashMap;
 /**
  * User.
  *
- * @author troy
- * @version $Id: User.java,v 1.5 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class User extends Command {
    String user;

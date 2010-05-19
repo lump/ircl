@@ -7,8 +7,7 @@ import java.util.Arrays;
 /**
  * Part from a channel or channels.
  *
- * @author troy
- * @version $Id: Part.java,v 1.3 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Part extends Command {
    private Channel[] channels;

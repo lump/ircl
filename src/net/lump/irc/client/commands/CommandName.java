@@ -6,8 +6,7 @@ import static net.lump.irc.client.State.States.*;
 /**
  * Valid IRC Command Names.  These are used in both {@link Command} construction as well as server command parsing.
  *
- * @author troy
- * @version $Id: CommandName.java,v 1.3 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public enum CommandName {

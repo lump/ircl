@@ -8,8 +8,7 @@ import static net.lump.irc.client.Response.Type.Error;
 /**
  * Server Response Codes.  This allows easily-read switch statements to handle replies.
  *
- * @author troy
- * @version $Id: Response.java,v 1.4 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public enum Response {

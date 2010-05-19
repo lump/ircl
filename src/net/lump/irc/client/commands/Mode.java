@@ -7,8 +7,7 @@ import net.lump.irc.client.Channel;
  *
  * todo: Mode needs some ironing out
  *
- * @author troy
- * @version $Id: Mode.java,v 1.2 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Mode extends Command {
    Nick nick;

@@ -6,8 +6,7 @@ import java.util.regex.Pattern;
 /**
  * This models an IRC message prefix.
  *
- * @author troy
- * @version $Id: Prefix.java,v 1.1 2010/04/29 03:06:09 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Prefix {
    String host;

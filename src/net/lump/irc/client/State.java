@@ -3,8 +3,7 @@ package net.lump.irc.client;
 /**
  * An IRC State.
  *
- * @author troy
- * @version $Id: State.java,v 1.6 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class State extends BitwiseEnum {
    public enum States {

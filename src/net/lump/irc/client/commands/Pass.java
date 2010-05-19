@@ -3,8 +3,7 @@ package net.lump.irc.client.commands;
 /**
  * Password.
  *
- * @author troy
- * @version $Id: Pass.java,v 1.2 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Pass extends Command {
    String password;

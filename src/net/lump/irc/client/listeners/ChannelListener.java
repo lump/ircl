@@ -6,8 +6,7 @@ import net.lump.irc.client.Prefix;
 /**
  * Pre-filtered channel specific events.
  *
- * @author troy
- * @version $Id: ChannelListener.java,v 1.1 2010/04/29 03:06:09 troy Exp $
+ * @author M. Troy Bowman
  */
 public interface ChannelListener {
    public void onNames(String[] names);

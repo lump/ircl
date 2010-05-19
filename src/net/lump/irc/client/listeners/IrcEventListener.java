@@ -7,8 +7,7 @@ import net.lump.irc.client.commands.CommandName;
 /**
  * Allows you to handle events from the server.
  *
- * @author troy
- * @version $Id: IrcEventListener.java,v 1.3 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public interface IrcEventListener {
 

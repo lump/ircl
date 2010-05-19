@@ -8,8 +8,7 @@ import java.util.regex.Pattern;
 /**
  * A Nick.
  *
- * @author troy
- * @version $Id: Nick.java,v 1.4 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Nick extends Command {
    private String nick;

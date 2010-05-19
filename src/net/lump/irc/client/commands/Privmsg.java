@@ -5,8 +5,7 @@ import net.lump.irc.client.Channel;
 /**
  * Privmsg.
  *
- * @author troy
- * @version $Id: Privmsg.java,v 1.4 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Privmsg extends Command {
    String target;

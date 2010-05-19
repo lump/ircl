@@ -8,8 +8,7 @@ import java.util.Arrays;
 /**
  * Kick.
  *
- * @author troy
- * @version $Id: Kick.java,v 1.1 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Kick extends Command {
    private final ArrayList<Channel> channels = new ArrayList<Channel>();

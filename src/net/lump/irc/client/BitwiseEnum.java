@@ -8,8 +8,7 @@ import java.util.ArrayList;
  * its own enum inner class for use with the superclass methods.  The subclass may also create aliases of the methods
  * which return {@link BitwiseEnum} for ease of casting.
  *
- * @author troy
- * @version $Id: BitwiseEnum.java,v 1.1 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public abstract class BitwiseEnum implements Serializable {
 

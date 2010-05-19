@@ -14,8 +14,7 @@ import java.util.Iterator;
  * <li>The {@link #getArgs} will be appended to the standardized {@link CommandName} when {@link #toString} is called.</li>
  * </ul>
  *
- * @author troy
- * @version $Id: Command.java,v 1.6 2010/05/08 03:34:50 troy Exp $
+ * @author M. Troy Bowman
  */
 public abstract class Command {
    CommandName commandName;

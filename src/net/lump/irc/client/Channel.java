@@ -13,8 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * .
  *
- * @author troy
- * @version $Id: Channel.java,v 1.6 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Channel {
 

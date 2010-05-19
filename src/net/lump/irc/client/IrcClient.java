@@ -25,8 +25,7 @@ import static net.lump.irc.client.State.States.*;
 /**
  * This keeps track of Connection State.
  *
- * @author troy
- * @version $Id: IrcClient.java,v 1.4 2010/05/07 18:42:22 troy Exp $
+ * @author M. Troy Bowman
  */
 public class IrcClient {
 

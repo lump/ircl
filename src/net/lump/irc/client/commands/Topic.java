@@ -3,8 +3,7 @@ package net.lump.irc.client.commands;
 /**
  * Topic.
  *
- * @author troy
- * @version $Id: Topic.java,v 1.1 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Topic extends Command {
    String topic;

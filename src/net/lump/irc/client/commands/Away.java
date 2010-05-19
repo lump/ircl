@@ -3,8 +3,7 @@ package net.lump.irc.client.commands;
 /**
  * Away.
  *
- * @author troy
- * @version $Id: Away.java,v 1.3 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Away extends Command {
 

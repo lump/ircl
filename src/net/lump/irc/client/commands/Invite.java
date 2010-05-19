@@ -7,8 +7,7 @@ import net.lump.irc.client.Channel;
  *
  * This invites a nick to a channel.
  *
- * @author troy
- * @version $Id: Invite.java,v 1.1 2010/05/01 20:22:04 troy Exp $
+ * @author M. Troy Bowman
  */
 public class Invite extends Command {
    Nick nick;
