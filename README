@@ -1,0 +1,9 @@
+
+ircl is an IRC library for Java.
+
+I got frustrated with the implementation of IRClib at 
+http://moepii.sourceforge.net/ so I wrote my own.
+
+My initial purpose for this library was an IRC Log4j Appender,
+so you get a Log4j appender as a gratuitous bonus.
+
