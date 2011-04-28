@@ -14,7 +14,7 @@ import java.util.HashMap;
  * .
  *
  * @author troy
- * @version $Id: TestConnect.java,v 1.6 2010/05/07 18:42:22 troy Exp $
+ * @version $Id: TestConnect.java,v 1.7 2011/01/04 22:39:46 troy Exp $
  */
 public class TestConnect {
 

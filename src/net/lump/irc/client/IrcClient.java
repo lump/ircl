@@ -25,7 +25,8 @@ import static net.lump.irc.client.State.States.*;
 /**
  * This keeps track of Connection State.
  *
- * @author M. Troy Bowman
+ * @author troy
+ * @version $Id: IrcClient.java,v 1.5 2011/01/04 22:39:46 troy Exp $
  */
 public class IrcClient {
 
@@ -107,7 +108,6 @@ public class IrcClient {
       if (ircSocket == null) ircSocket = new IrcSocket();
 
       if (!ircSocket.isConnected()) ircSocket.connect();
-
    }
 
    public void disconnect(String reason) {
@@ -489,7 +489,7 @@ public class IrcClient {
                socket = new Socket();
                socket.setKeepAlive(true);
                socket.setSoLinger(false, 0);
-               socket.setSoTimeout(15 * MINUTE);
+               socket.setSoTimeout(0);
                socket.connect(server, 15000);
 
                if (readerThread != null && readerThread.isAlive()) { readerThread.interrupt(); readerThread = null; }

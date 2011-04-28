@@ -9,7 +9,7 @@ import java.util.ArrayList;
  * Tests the IRC Appender
  *
  * @author troy
- * @version $Id: TestIrcAppender.java,v 1.3 2010/05/07 18:42:22 troy Exp $
+ * @version $Id: TestIrcAppender.java,v 1.4 2011/01/04 22:39:46 troy Exp $
  */
 public class TestIrcAppender {
    private static volatile int blah = 0;

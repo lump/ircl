@@ -176,9 +176,15 @@ public class IrcAppender extends AppenderSkeleton {
       }
 
       public void onDisconnect(String[] args, String message) {
-         LogLog.error("Disconnected");
-         try { Thread.sleep(1000); } catch (InterruptedException ignore) { }
-         activateOptions();
+         LogLog.error("Disconnected: " + message);
+         IrcAppender.this.close();
+//         if (message.contains("Connection refused")) {
+//            IrcAppender.this.close();
+//         }
+//         else {
+//            try { Thread.sleep(1000); } catch (InterruptedException ignore) { }
+//            activateOptions();
+//         }
       }
    };
 
@@ -225,8 +231,8 @@ public class IrcAppender extends AppenderSkeleton {
    @Override
    public void append(LoggingEvent event) {
 
-      if (client == null || !client.isRegistered()) activateOptions();
-      if (client == null) return;
+      if (client == null || !client.isConnected() || !client.isRegistered()) activateOptions();
+      if (client == null || !client.isConnected()) return;
       if (client.getChannel(channel.getName()) == null) client.send(new Join(channel));
       if (client.isAway()) client.send(new Away(null));
 
@@ -253,7 +259,7 @@ public class IrcAppender extends AppenderSkeleton {
 
    @Override
    public void close() {
-      if (!client.isAway()) {
+      if (client.isConnected() && !client.isAway()) {
          client.send(new Away("I'm not listening to you right now."));
       }
    }
