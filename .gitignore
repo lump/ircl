@@ -1,3 +1,7 @@
 ircl.iws
+irc-appender.jar
 classes
 test-output
+CVS
+*~
+*.swp
